@@ -7,9 +7,9 @@ An autonomous website & staging QA inspection agent designed to audit websites f
 ## 🌐 Live Public Demo (Active Link)
 
 **Shareable Live Dashboard:**  
-👉 **[https://6e5cf0c54d7e82.lhr.life](https://6e5cf0c54d7e82.lhr.life)**
+👉 **[https://acad11819d4843.lhr.life](https://acad11819d4843.lhr.life)**
 
-*Fully hosted live with interactive magnetic particle background, Web Audio sound effects, live bug radar, Whack-a-Bug mini-game, and defect squasher simulator.*
+*Fully hosted live with persistent keep-alive heartbeat, interactive magnetic particle background, Web Audio sound effects, live bug radar, Whack-a-Bug mini-game, and defect squasher simulator.*
 
 ---
 
