@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Audit Report - http://127.0.0.1:8088</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --p0: #ef4444;
+      --p1: #f97316;
+      --p2: #eab308;
+      --p3: #3b82f6;
+      --confirmed: #dc2626;
+      --suspected: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 32px 20px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      background: var(--card-bg);
+      padding: 24px 32px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .header-left h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .header-left p { color: var(--text-muted); font-size: 14px; }
+    .health-badge {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid #ef4444;
+      padding: 12px 24px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .health-badge .score { font-size: 36px; font-weight: 800; color: #ef4444; }
+    .health-badge .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .kpi-card .num { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+    .kpi-card .title { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .summary-card h2 { font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .recommendation-list { list-style-type: none; margin-top: 12px; }
+    .recommendation-list li {
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border-left: 3px solid var(--primary);
+      margin-bottom: 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .controls {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-filter {
+      background: #334155;
+      color: #cbd5e1;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-filter.active, .btn-filter:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-filter.confirmed-active { background: #dc2626 !important; color: white !important; }
+    .btn-filter.suspected-active { background: #d97706 !important; color: white !important; }
+    .search-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      min-width: 240px;
+    }
+
+    .issue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .issue-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+    .issue-card:hover {
+      border-color: #64748b;
+    }
+    .issue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .issue-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+    .badges {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-P0_CRITICAL { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+    .badge-P1_HIGH { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid #f97316; }
+    .badge-P2_MEDIUM { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid #eab308; }
+    .badge-P3_LOW { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+    .badge-CONFIRMED { background: #dc2626; color: #fff; }
+    .badge-SUSPECTED { background: #d97706; color: #fff; }
+    .badge-cat { background: #334155; color: #cbd5e1; }
+
+    .issue-desc {
+      color: #cbd5e1;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .code-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #93c5fd;
+      margin-bottom: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .remediation-box {
+      background: rgba(16, 185, 129, 0.08);
+      border-left: 3px solid #10b981;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #a7f3d0;
+    }
+    .issue-meta {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 10px;
+    }
+    .no-results {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-left">
+        <h1>🛡️ AI Website QA Audit Report</h1>
+        <p>Target: <strong>http://127.0.0.1:8088</strong> &bull; Scanned on 2026-10-30 10:22:19 UTC</p>
+      </div>
+      <div class="health-badge">
+        <div class="score">0</div>
+        <div class="label">QA Health Score</div>
+      </div>
+    </header>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="num" style="color: #ef4444;">17</div>
+        <div class="title">Confirmed Defects</div>
+      </div>
+      <div class="kpi-card">
+        <div class="num" style="color: #f59e0b;">13</div>
+        <div class="title">Suspected Anomalies</div>
+      </div>
+      <div class="kpi-card">
+        <div class="num" style="color: #3b82f6;">4</div>
+        <div class="title">Pages Audited</div>
+      </div>
+      <div class="kpi-card">
+        <div class="num" style="color: #10b981;">16</div>
+        <div class="title">Total Assets Checked</div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <h2>🎯 Executive Synthesis & Remediation Roadmap</h2>
+      <ul class="recommendation-list">
+        <li>🚨 **Blocker Resolution (P0):** Fix critical path blockers: Broken Link (HTTP 404), Un-rendered Template / Script Leak: '{{ company.tagline }}', Missing Mobile Viewport Meta Tag.</li><li>🔗 **Fix Dead Links (3 confirmed):** Update or remove broken URLs returning HTTP 404/500 errors to maintain navigation integrity.</li><li>🖼️ **Fix Missing Visuals (2 confirmed):** Restore 404 image assets and ensure all <img> tags have valid src and accessible alt attributes.</li><li>✍️ **Content Sanitization:** Purge draft placeholder text (Lorem Ipsum, TODOs, raw template tags) and fix character encoding glitches before public release.</li><li>🎨 **UI & Accessibility Fixes:** Supply missing button text/labels, correct heading hierarchy, and verify mobile viewport responsiveness.</li><li>🔍 **SEO & Indexability:** Populate missing <title> and meta descriptions, verify canonical tags, and check robots directives.</li>
+      </ul>
+    </div>
+
+    <div class="controls">
+      <div class="filter-group">
+        <button class="btn-filter active" onclick="setFilter('status', 'ALL', this)">All (30)</button>
+        <button class="btn-filter" onclick="setFilter('status', 'CONFIRMED', this)">Confirmed (17)</button>
+        <button class="btn-filter" onclick="setFilter('status', 'SUSPECTED', this)">Suspected (13)</button>
+      </div>
+      <div class="filter-group">
+        <button class="btn-filter" onclick="setFilter('severity', 'P0_CRITICAL', this)">P0 Critical (3)</button>
+        <button class="btn-filter" onclick="setFilter('severity', 'P1_HIGH', this)">P1 High (7)</button>
+        <button class="btn-filter" onclick="setFilter('severity', 'P2_MEDIUM', this)">P2 Medium (12)</button>
+        <button class="btn-filter" onclick="setFilter('severity', 'P3_LOW', this)">P3 Low (8)</button>
+      </div>
+      <input type="text" class="search-box" placeholder="Search issues by keyword..." oninput="handleSearch(this.value)">
+    </div>
+
+    <div id="issue-list" class="issue-list"></div>
+  </div>
+
+  <script>
+    const reportData = {"target_url":"http://127.0.0.1:8088","scan_timestamp":"2026-10-30T10:22:19.740876","stats":{"start_time":"2026-10-30T10:22:19.694915","end_time":"2026-10-30T10:22:19.740876","duration_seconds":0.05,"pages_crawled":4,"pages_failed":0,"total_links_inspected":14,"total_images_inspected":2},"health_score":0,"total_issues":30,"confirmed_count":17,"suspected_count":13,"severity_breakdown":{"P0_CRITICAL":3,"P1_HIGH":7,"P2_MEDIUM":12,"P3_LOW":8},"category_breakdown":{"BROKEN_LINKS":3,"CONTENT_CONSISTENCY":7,"UI_LAYOUT":5,"MISSING_IMAGES":2,"SEO_METADATA":13},"status_breakdown":{"CONFIRMED":17,"SUSPECTED":13},"executive_summary":"### Executive QA Summary for http://127.0.0.1:8088\n\n**Overall Health Score: 0/100** — CRITICAL RISK. High density of blocking defects, broken paths, or missing core metadata.\n\nThe QA Agent audited **4 page(s)** in 0.05s, evaluating **14 links** and **2 images/assets**.\n\n#### Findings Overview:\n- **Confirmed Defects:** 17 verified issues requiring immediate engineering or editorial correction.\n- **Suspected Anomalies:** 13 contextual or heuristic issues recommended for manual verification.\n- **Severity Distribution:** 3 Critical (P0), 7 High (P1), 12 Medium (P2), and 8 Low (P3).","top_recommendations":["🚨 **Blocker Resolution (P0):** Fix critical path blockers: Broken Link (HTTP 404), Un-rendered Template / Script Leak: '{{ company.tagline }}', Missing Mobile Viewport Meta Tag.","🔗 **Fix Dead Links (3 confirmed):** Update or remove broken URLs returning HTTP 404/500 errors to maintain navigation integrity.","🖼️ **Fix Missing Visuals (2 confirmed):** Restore 404 image assets and ensure all <img> tags have valid src and accessible alt attributes.","✍️ **Content Sanitization:** Purge draft placeholder text (Lorem Ipsum, TODOs, raw template tags) and fix character encoding glitches before public release.","🎨 **UI & Accessibility Fixes:** Supply missing button text/labels, correct heading hierarchy, and verify mobile viewport responsiveness.","🔍 **SEO & Indexability:** Populate missing <title> and meta descriptions, verify canonical tags, and check robots directives."],"pages":[{"url":"http://127.0.0.1:8088/","status_code":200,"content_type":"text/html; charset=utf-8","load_time_ms":6.21,"title":"Acme Cloud Solutions - Next Gen Staging Portal","links_checked":6,"images_checked":2,"issues":[{"id":"ISSUE-801384EA","url":"http://127.0.0.1:8088/","category":"BROKEN_LINKS","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Broken in-page anchor hash","description":"Link points to internal anchor '#non-existent-section', but no element with id='non-existent-section' exists on this page.","element_selector":"<a href=\"#non-existent-section\">Jump to Specs</a>","evidence":{"fragment":"non-existent-section","anchor_text":"Jump to Specs"},"remediation":"Ensure the target section has id='non-existent-section' or update the link to point to an existing section."},{"id":"ISSUE-6A4FE75F","url":"http://127.0.0.1:8088/","category":"BROKEN_LINKS","severity":"P0_CRITICAL","status":"CONFIRMED","title":"Broken Link (HTTP 404)","description":"Link to 'http://127.0.0.1:8088/non-existent-page' returned HTTP 404 (Not Found). Anchor text: 'Enterprise Feature Preview'","element_selector":"<a href=\"/non-existent-page\">Enterprise Feature Preview</a>","evidence":{"target_url":"http://127.0.0.1:8088/non-existent-page","status_code":404,"is_internal":true,"anchor_text":"Enterprise Feature Preview"},"remediation":"Update link href from '/non-existent-page' to an active endpoint, or remove the link if obsolete."},{"id":"ISSUE-EBD385FC","url":"http://127.0.0.1:8088/","category":"MISSING_IMAGES","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Missing 'alt' attribute on image","description":"Image '/static/valid-logo.png' lacks an 'alt' attribute entirely (WCAG 2.1 Success Criterion 1.1.1 defect).","element_selector":"<img height=\"40\" src=\"/static/valid-logo.png\" width=\"120\"/>","evidence":{"src":"/static/valid-logo.png"},"remediation":"Add a descriptive alt attribute (e.g., alt='Company logo') or alt='' if purely decorative."},{"id":"ISSUE-D45BA5B0","url":"http://127.0.0.1:8088/","category":"MISSING_IMAGES","severity":"P1_HIGH","status":"CONFIRMED","title":"Broken / Missing Image (HTTP 404)","description":"Image '/static/missing-hero-banner.jpg' returned HTTP 404 Not Found at 'http://127.0.0.1:8088/static/missing-hero-banner.jpg'.","element_selector":"<img alt=\"Platform Architecture Overview\" height=\"300\" src=\"/static/missing-hero-banner.jpg\" width=\"600\"/>","evidence":{"img_url":"http://127.0.0.1:8088/static/missing-hero-banner.jpg","status_code":404},"remediation":"Verify the image file exists in the static asset directory or update the src route."},{"id":"ISSUE-8514A4B0","url":"http://127.0.0.1:8088/","category":"CONTENT_CONSISTENCY","severity":"P0_CRITICAL","status":"CONFIRMED","title":"Un-rendered Template / Script Leak: '{{ company.tagline }}'","description":"Un-rendered template variable (e.g., {{ variable }}). Found occurrence: '{{ company.tagline }}'.","element_selector":"<p>Current Organization: {{ company.tagline }}</p>","evidence":{"leak":"{{ company.tagline }}"},"remediation":"Ensure server-side rendering or frontend framework populates this variable before rendering DOM."},{"id":"ISSUE-1BFF2F06","url":"http://127.0.0.1:8088/","category":"CONTENT_CONSISTENCY","severity":"P3_LOW","status":"SUSPECTED","title":"Outdated Copyright Year (2019 vs 2026)","description":"Copyright notice displays '© 2019', which does not reflect current year 2026.","element_selector":null,"evidence":{"stated_year":2019,"current_year":2026},"remediation":"Update copyright year to 2026 or use a dynamic year snippet (e.g. new Date().getFullYear())."},{"id":"ISSUE-DAC8FC1A","url":"http://127.0.0.1:8088/","category":"CONTENT_CONSISTENCY","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Suspected Dummy Contact Data: 'test@example.com'","description":"Dummy example email address was discovered in body content. Check if this staging data needs replacing before production launch.","element_selector":null,"evidence":{"dummy_val":"test@example.com"},"remediation":"Replace test contact details with active company communication channels."},{"id":"ISSUE-F8B91EAC","url":"http://127.0.0.1:8088/","category":"CONTENT_CONSISTENCY","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Suspected Dummy Contact Data: '555-0199'","description":"Likely placeholder phone number (555-xxxx or 123-456-7890) was discovered in body content. Check if this staging data needs replacing before production launch.","element_selector":null,"evidence":{"dummy_val":"555-0199"},"remediation":"Replace test contact details with active company communication channels."},{"id":"ISSUE-C00DE017","url":"http://127.0.0.1:8088/","category":"UI_LAYOUT","severity":"P1_HIGH","status":"CONFIRMED","title":"Empty Button / Unlabelled Interactive Element","description":"A clickable <button> has no visible text, no icon, and no aria-label, rendering it invisible or unusable for users and screen readers.","element_selector":"<button class=\"btn btn-primary\"></button>","evidence":{},"remediation":"Add visible text or an aria-label attribute (e.g. aria-label='Close dialog')."},{"id":"ISSUE-4ECA2028","url":"http://127.0.0.1:8088/","category":"UI_LAYOUT","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Multiple Primary Headings Detected (2 <h1> tags)","description":"Found multiple <h1> tags on a single page. While valid in HTML5 sections, best practice recommends a single main page <h1>.","element_selector":null,"evidence":{"count":2},"remediation":"Reserve <h1> for the main page title and structure sub-sections using <h2> through <h6>."},{"id":"ISSUE-7C517443","url":"http://127.0.0.1:8088/","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Missing OpenGraph Social Meta Tags (og:image, og:description)","description":"Missing Open Graph tags (og:image, og:description) will cause broken card previews when shared on Slack, Twitter/X, or LinkedIn.","element_selector":null,"evidence":{"missing_tags":["og:image","og:description"]},"remediation":"Add missing OpenGraph meta tags in <head>: og:image, og:description."}]},{"url":"http://127.0.0.1:8088/pricing","status_code":200,"content_type":"text/html; charset=utf-8","load_time_ms":4.8,"title":"Pricing Plans - Acme Cloud","links_checked":2,"images_checked":0,"issues":[{"id":"ISSUE-931185BC","url":"http://127.0.0.1:8088/pricing","category":"UI_LAYOUT","severity":"P3_LOW","status":"SUSPECTED","title":"Skipped Heading Hierarchy Level (h1 to h4)","description":"Heading order skipped a level from <h1> directly to <h4> ('Developer Tier ($0/mo)').","element_selector":"<h4>Developer Tier ($0/mo)</h4>","evidence":{"from_level":1,"to_level":4},"remediation":"Maintain a sequential heading hierarchy without skipping intermediate levels."},{"id":"ISSUE-7550BD59","url":"http://127.0.0.1:8088/pricing","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Missing Meta Description","description":"No <meta name='description'> found. Search engines will generate automated snippets from page body.","element_selector":null,"evidence":{},"remediation":"Add '<meta name=\"description\" content=\"...\">' with a compelling summary (120-160 characters)."},{"id":"ISSUE-1B2F51D7","url":"http://127.0.0.1:8088/pricing","category":"SEO_METADATA","severity":"P1_HIGH","status":"CONFIRMED","title":"Multiple Canonical Tags Detected","description":"Page contains 2 conflicting canonical declarations, causing search engines to ignore them.","element_selector":null,"evidence":{},"remediation":"Ensure only one canonical tag is emitted in the page <head>."},{"id":"ISSUE-51C049FB","url":"http://127.0.0.1:8088/pricing","category":"SEO_METADATA","severity":"P1_HIGH","status":"CONFIRMED","title":"Page Has 'noindex' Directive Active","description":"Search engines are instructed not to index this page (robots directive: 'noindex, nofollow'). Normal on staging, but fatal on production.","element_selector":null,"evidence":{"meta_robots":"noindex, nofollow","x_robots":""},"remediation":"Confirm whether this page is intended to be excluded from search indexes before deploying to production."},{"id":"ISSUE-01D7BC5F","url":"http://127.0.0.1:8088/pricing","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Missing OpenGraph Social Meta Tags (og:title, og:image, og:description)","description":"Missing Open Graph tags (og:title, og:image, og:description) will cause broken card previews when shared on Slack, Twitter/X, or LinkedIn.","element_selector":null,"evidence":{"missing_tags":["og:title","og:image","og:description"]},"remediation":"Add missing OpenGraph meta tags in <head>: og:title, og:image, og:description."}]},{"url":"http://127.0.0.1:8088/about","status_code":200,"content_type":"text/html; charset=utf-8","load_time_ms":7.53,"title":null,"links_checked":4,"images_checked":0,"issues":[{"id":"ISSUE-2F4351B7","url":"http://127.0.0.1:8088/about","category":"BROKEN_LINKS","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Empty link destination (href='')","description":"Anchor element has an empty href attribute. Text: 'Click for more leadership information'","element_selector":"<a href=\"\">Click for more leadership information</a>","evidence":{"anchor_text":"Click for more leadership information"},"remediation":"Provide a valid target URL or anchor identifier instead of an empty href."},{"id":"ISSUE-B7B88DC9","url":"http://127.0.0.1:8088/about","category":"CONTENT_CONSISTENCY","severity":"P1_HIGH","status":"CONFIRMED","title":"Lorem Ipsum Placeholder Content Detected","description":"Found unreplaced Lorem Ipsum dummy text: 'Lorem ipsum'. This indicates incomplete draft copy.","element_selector":"<body>\n<nav>\n<a href=\"/\">Home</a> |\n        <a href=\"/about\">About Us</a> |\n        <a href=\"/contact\">Contact</a>\n</nav>\n<h1>About Acme Corporation</","evidence":{"match":"Lorem ipsum"},"remediation":"Replace all dummy Latin placeholder copy with finalized product/marketing content."},{"id":"ISSUE-47C77A9B","url":"http://127.0.0.1:8088/about","category":"CONTENT_CONSISTENCY","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Corrupted Character Encoding / Mojibake Detected","description":"Found garbled character sequence 'Ã©', commonly caused by UTF-8 characters decoded in Windows-1252 or double-escaped entities.","element_selector":"Ã©","evidence":{"corrupted_chars":"Ã©"},"remediation":"Verify charset declaration (<meta charset='utf-8'>) and ensure source files and database connections use UTF-8 encoding."},{"id":"ISSUE-73401290","url":"http://127.0.0.1:8088/about","category":"UI_LAYOUT","severity":"P3_LOW","status":"SUSPECTED","title":"Skipped Heading Hierarchy Level (h1 to h3)","description":"Heading order skipped a level from <h1> directly to <h3> ('Leadership Team').","element_selector":"<h3>Leadership Team</h3>","evidence":{"from_level":1,"to_level":3},"remediation":"Maintain a sequential heading hierarchy without skipping intermediate levels."},{"id":"ISSUE-95184629","url":"http://127.0.0.1:8088/about","category":"SEO_METADATA","severity":"P1_HIGH","status":"CONFIRMED","title":"Missing Document <title> Tag","description":"Page is missing a <title> tag in the <head>. This is a primary SEO ranking and browser tab indicator.","element_selector":null,"evidence":{},"remediation":"Add a descriptive <title> tag inside the <head> element (recommended length: 30-60 characters)."},{"id":"ISSUE-1F588964","url":"http://127.0.0.1:8088/about","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Lengthy Meta Description (282 chars)","description":"Meta description length is 282 characters and will likely be truncated on SERP viewports.","element_selector":null,"evidence":{"content":"This is an excessively long meta description crafted specifically to test SEO truncation warnings. It keeps going on and on beyond one hundred and sixty characters to ensure that the AI Website QA Agent properly flags it as a suspected truncation risk in search engine result pages.","length":282},"remediation":"Shorten meta description to under 160 characters."},{"id":"ISSUE-DD8853F4","url":"http://127.0.0.1:8088/about","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Missing Canonical Link Tag","description":"No <link rel='canonical' href='...'> tag found. This can lead to duplicate content penalties.","element_selector":null,"evidence":{},"remediation":"Specify preferred canonical URL: <link rel='canonical' href='http://127.0.0.1:8088/about'>."},{"id":"ISSUE-30C6827B","url":"http://127.0.0.1:8088/about","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Missing OpenGraph Social Meta Tags (og:title, og:image, og:description)","description":"Missing Open Graph tags (og:title, og:image, og:description) will cause broken card previews when shared on Slack, Twitter/X, or LinkedIn.","element_selector":null,"evidence":{"missing_tags":["og:title","og:image","og:description"]},"remediation":"Add missing OpenGraph meta tags in <head>: og:title, og:image, og:description."}]},{"url":"http://127.0.0.1:8088/contact","status_code":200,"content_type":"text/html; charset=utf-8","load_time_ms":9.65,"title":"Contact Us - Acme Cloud","links_checked":2,"images_checked":0,"issues":[{"id":"ISSUE-E167117F","url":"http://127.0.0.1:8088/contact","category":"CONTENT_CONSISTENCY","severity":"P1_HIGH","status":"CONFIRMED","title":"Developer Placeholder Present: 'TODO:'","description":"Unfinished 'TODO' tag in page text was found in the visible page copy.","element_selector":"<body>\n<nav><a href=\"/\">Home</a> | <a href=\"/contact\">Contact</a></nav>\n<h1>Get in Touch</h1>\n<!-- Developer TODO leak -->\n<p class=\"notice\">TODO: Con","evidence":{"token":"TODO:"},"remediation":"Review and complete the unfinished content section."},{"id":"ISSUE-E42BC353","url":"http://127.0.0.1:8088/contact","category":"UI_LAYOUT","severity":"P0_CRITICAL","status":"CONFIRMED","title":"Missing Mobile Viewport Meta Tag","description":"No <meta name='viewport'> tag detected. Mobile devices will render the desktop viewport causing distorted layouts and zoom issues.","element_selector":null,"evidence":{},"remediation":"Add '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">' inside the <head> tag."},{"id":"ISSUE-94098A4A","url":"http://127.0.0.1:8088/contact","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Missing HTML Language Attribute (<html lang='...'>)","description":"The <html> element does not specify a 'lang' attribute, preventing screen readers and search engines from identifying page language.","element_selector":null,"evidence":{},"remediation":"Add a valid ISO language code to the root element, e.g. <html lang='en'>."},{"id":"ISSUE-404470F1","url":"http://127.0.0.1:8088/contact","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Missing Meta Description","description":"No <meta name='description'> found. Search engines will generate automated snippets from page body.","element_selector":null,"evidence":{},"remediation":"Add '<meta name=\"description\" content=\"...\">' with a compelling summary (120-160 characters)."},{"id":"ISSUE-C3F22521","url":"http://127.0.0.1:8088/contact","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Missing Canonical Link Tag","description":"No <link rel='canonical' href='...'> tag found. This can lead to duplicate content penalties.","element_selector":null,"evidence":{},"remediation":"Specify preferred canonical URL: <link rel='canonical' href='http://127.0.0.1:8088/contact'>."},{"id":"ISSUE-EE37457B","url":"http://127.0.0.1:8088/contact","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Missing OpenGraph Social Meta Tags (og:title, og:image, og:description)","description":"Missing Open Graph tags (og:title, og:image, og:description) will cause broken card previews when shared on Slack, Twitter/X, or LinkedIn.","element_selector":null,"evidence":{"missing_tags":["og:title","og:image","og:description"]},"remediation":"Add missing OpenGraph meta tags in <head>: og:title, og:image, og:description."}]}],"issues":[{"id":"ISSUE-6A4FE75F","url":"http://127.0.0.1:8088/","category":"BROKEN_LINKS","severity":"P0_CRITICAL","status":"CONFIRMED","title":"Broken Link (HTTP 404)","description":"Link to 'http://127.0.0.1:8088/non-existent-page' returned HTTP 404 (Not Found). Anchor text: 'Enterprise Feature Preview'","element_selector":"<a href=\"/non-existent-page\">Enterprise Feature Preview</a>","evidence":{"target_url":"http://127.0.0.1:8088/non-existent-page","status_code":404,"is_internal":true,"anchor_text":"Enterprise Feature Preview"},"remediation":"Update link href from '/non-existent-page' to an active endpoint, or remove the link if obsolete."},{"id":"ISSUE-8514A4B0","url":"http://127.0.0.1:8088/","category":"CONTENT_CONSISTENCY","severity":"P0_CRITICAL","status":"CONFIRMED","title":"Un-rendered Template / Script Leak: '{{ company.tagline }}'","description":"Un-rendered template variable (e.g., {{ variable }}). Found occurrence: '{{ company.tagline }}'.","element_selector":"<p>Current Organization: {{ company.tagline }}</p>","evidence":{"leak":"{{ company.tagline }}"},"remediation":"Ensure server-side rendering or frontend framework populates this variable before rendering DOM."},{"id":"ISSUE-E42BC353","url":"http://127.0.0.1:8088/contact","category":"UI_LAYOUT","severity":"P0_CRITICAL","status":"CONFIRMED","title":"Missing Mobile Viewport Meta Tag","description":"No <meta name='viewport'> tag detected. Mobile devices will render the desktop viewport causing distorted layouts and zoom issues.","element_selector":null,"evidence":{},"remediation":"Add '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">' inside the <head> tag."},{"id":"ISSUE-B7B88DC9","url":"http://127.0.0.1:8088/about","category":"CONTENT_CONSISTENCY","severity":"P1_HIGH","status":"CONFIRMED","title":"Lorem Ipsum Placeholder Content Detected","description":"Found unreplaced Lorem Ipsum dummy text: 'Lorem ipsum'. This indicates incomplete draft copy.","element_selector":"<body>\n<nav>\n<a href=\"/\">Home</a> |\n        <a href=\"/about\">About Us</a> |\n        <a href=\"/contact\">Contact</a>\n</nav>\n<h1>About Acme Corporation</","evidence":{"match":"Lorem ipsum"},"remediation":"Replace all dummy Latin placeholder copy with finalized product/marketing content."},{"id":"ISSUE-E167117F","url":"http://127.0.0.1:8088/contact","category":"CONTENT_CONSISTENCY","severity":"P1_HIGH","status":"CONFIRMED","title":"Developer Placeholder Present: 'TODO:'","description":"Unfinished 'TODO' tag in page text was found in the visible page copy.","element_selector":"<body>\n<nav><a href=\"/\">Home</a> | <a href=\"/contact\">Contact</a></nav>\n<h1>Get in Touch</h1>\n<!-- Developer TODO leak -->\n<p class=\"notice\">TODO: Con","evidence":{"token":"TODO:"},"remediation":"Review and complete the unfinished content section."},{"id":"ISSUE-D45BA5B0","url":"http://127.0.0.1:8088/","category":"MISSING_IMAGES","severity":"P1_HIGH","status":"CONFIRMED","title":"Broken / Missing Image (HTTP 404)","description":"Image '/static/missing-hero-banner.jpg' returned HTTP 404 Not Found at 'http://127.0.0.1:8088/static/missing-hero-banner.jpg'.","element_selector":"<img alt=\"Platform Architecture Overview\" height=\"300\" src=\"/static/missing-hero-banner.jpg\" width=\"600\"/>","evidence":{"img_url":"http://127.0.0.1:8088/static/missing-hero-banner.jpg","status_code":404},"remediation":"Verify the image file exists in the static asset directory or update the src route."},{"id":"ISSUE-1B2F51D7","url":"http://127.0.0.1:8088/pricing","category":"SEO_METADATA","severity":"P1_HIGH","status":"CONFIRMED","title":"Multiple Canonical Tags Detected","description":"Page contains 2 conflicting canonical declarations, causing search engines to ignore them.","element_selector":null,"evidence":{},"remediation":"Ensure only one canonical tag is emitted in the page <head>."},{"id":"ISSUE-51C049FB","url":"http://127.0.0.1:8088/pricing","category":"SEO_METADATA","severity":"P1_HIGH","status":"CONFIRMED","title":"Page Has 'noindex' Directive Active","description":"Search engines are instructed not to index this page (robots directive: 'noindex, nofollow'). Normal on staging, but fatal on production.","element_selector":null,"evidence":{"meta_robots":"noindex, nofollow","x_robots":""},"remediation":"Confirm whether this page is intended to be excluded from search indexes before deploying to production."},{"id":"ISSUE-95184629","url":"http://127.0.0.1:8088/about","category":"SEO_METADATA","severity":"P1_HIGH","status":"CONFIRMED","title":"Missing Document <title> Tag","description":"Page is missing a <title> tag in the <head>. This is a primary SEO ranking and browser tab indicator.","element_selector":null,"evidence":{},"remediation":"Add a descriptive <title> tag inside the <head> element (recommended length: 30-60 characters)."},{"id":"ISSUE-C00DE017","url":"http://127.0.0.1:8088/","category":"UI_LAYOUT","severity":"P1_HIGH","status":"CONFIRMED","title":"Empty Button / Unlabelled Interactive Element","description":"A clickable <button> has no visible text, no icon, and no aria-label, rendering it invisible or unusable for users and screen readers.","element_selector":"<button class=\"btn btn-primary\"></button>","evidence":{},"remediation":"Add visible text or an aria-label attribute (e.g. aria-label='Close dialog')."},{"id":"ISSUE-801384EA","url":"http://127.0.0.1:8088/","category":"BROKEN_LINKS","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Broken in-page anchor hash","description":"Link points to internal anchor '#non-existent-section', but no element with id='non-existent-section' exists on this page.","element_selector":"<a href=\"#non-existent-section\">Jump to Specs</a>","evidence":{"fragment":"non-existent-section","anchor_text":"Jump to Specs"},"remediation":"Ensure the target section has id='non-existent-section' or update the link to point to an existing section."},{"id":"ISSUE-2F4351B7","url":"http://127.0.0.1:8088/about","category":"BROKEN_LINKS","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Empty link destination (href='')","description":"Anchor element has an empty href attribute. Text: 'Click for more leadership information'","element_selector":"<a href=\"\">Click for more leadership information</a>","evidence":{"anchor_text":"Click for more leadership information"},"remediation":"Provide a valid target URL or anchor identifier instead of an empty href."},{"id":"ISSUE-47C77A9B","url":"http://127.0.0.1:8088/about","category":"CONTENT_CONSISTENCY","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Corrupted Character Encoding / Mojibake Detected","description":"Found garbled character sequence 'Ã©', commonly caused by UTF-8 characters decoded in Windows-1252 or double-escaped entities.","element_selector":"Ã©","evidence":{"corrupted_chars":"Ã©"},"remediation":"Verify charset declaration (<meta charset='utf-8'>) and ensure source files and database connections use UTF-8 encoding."},{"id":"ISSUE-EBD385FC","url":"http://127.0.0.1:8088/","category":"MISSING_IMAGES","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Missing 'alt' attribute on image","description":"Image '/static/valid-logo.png' lacks an 'alt' attribute entirely (WCAG 2.1 Success Criterion 1.1.1 defect).","element_selector":"<img height=\"40\" src=\"/static/valid-logo.png\" width=\"120\"/>","evidence":{"src":"/static/valid-logo.png"},"remediation":"Add a descriptive alt attribute (e.g., alt='Company logo') or alt='' if purely decorative."},{"id":"ISSUE-7550BD59","url":"http://127.0.0.1:8088/pricing","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Missing Meta Description","description":"No <meta name='description'> found. Search engines will generate automated snippets from page body.","element_selector":null,"evidence":{},"remediation":"Add '<meta name=\"description\" content=\"...\">' with a compelling summary (120-160 characters)."},{"id":"ISSUE-94098A4A","url":"http://127.0.0.1:8088/contact","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Missing HTML Language Attribute (<html lang='...'>)","description":"The <html> element does not specify a 'lang' attribute, preventing screen readers and search engines from identifying page language.","element_selector":null,"evidence":{},"remediation":"Add a valid ISO language code to the root element, e.g. <html lang='en'>."},{"id":"ISSUE-404470F1","url":"http://127.0.0.1:8088/contact","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"CONFIRMED","title":"Missing Meta Description","description":"No <meta name='description'> found. Search engines will generate automated snippets from page body.","element_selector":null,"evidence":{},"remediation":"Add '<meta name=\"description\" content=\"...\">' with a compelling summary (120-160 characters)."},{"id":"ISSUE-DAC8FC1A","url":"http://127.0.0.1:8088/","category":"CONTENT_CONSISTENCY","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Suspected Dummy Contact Data: 'test@example.com'","description":"Dummy example email address was discovered in body content. Check if this staging data needs replacing before production launch.","element_selector":null,"evidence":{"dummy_val":"test@example.com"},"remediation":"Replace test contact details with active company communication channels."},{"id":"ISSUE-F8B91EAC","url":"http://127.0.0.1:8088/","category":"CONTENT_CONSISTENCY","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Suspected Dummy Contact Data: '555-0199'","description":"Likely placeholder phone number (555-xxxx or 123-456-7890) was discovered in body content. Check if this staging data needs replacing before production launch.","element_selector":null,"evidence":{"dummy_val":"555-0199"},"remediation":"Replace test contact details with active company communication channels."},{"id":"ISSUE-DD8853F4","url":"http://127.0.0.1:8088/about","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Missing Canonical Link Tag","description":"No <link rel='canonical' href='...'> tag found. This can lead to duplicate content penalties.","element_selector":null,"evidence":{},"remediation":"Specify preferred canonical URL: <link rel='canonical' href='http://127.0.0.1:8088/about'>."},{"id":"ISSUE-C3F22521","url":"http://127.0.0.1:8088/contact","category":"SEO_METADATA","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Missing Canonical Link Tag","description":"No <link rel='canonical' href='...'> tag found. This can lead to duplicate content penalties.","element_selector":null,"evidence":{},"remediation":"Specify preferred canonical URL: <link rel='canonical' href='http://127.0.0.1:8088/contact'>."},{"id":"ISSUE-4ECA2028","url":"http://127.0.0.1:8088/","category":"UI_LAYOUT","severity":"P2_MEDIUM","status":"SUSPECTED","title":"Multiple Primary Headings Detected (2 <h1> tags)","description":"Found multiple <h1> tags on a single page. While valid in HTML5 sections, best practice recommends a single main page <h1>.","element_selector":null,"evidence":{"count":2},"remediation":"Reserve <h1> for the main page title and structure sub-sections using <h2> through <h6>."},{"id":"ISSUE-1BFF2F06","url":"http://127.0.0.1:8088/","category":"CONTENT_CONSISTENCY","severity":"P3_LOW","status":"SUSPECTED","title":"Outdated Copyright Year (2019 vs 2026)","description":"Copyright notice displays '© 2019', which does not reflect current year 2026.","element_selector":null,"evidence":{"stated_year":2019,"current_year":2026},"remediation":"Update copyright year to 2026 or use a dynamic year snippet (e.g. new Date().getFullYear())."},{"id":"ISSUE-7C517443","url":"http://127.0.0.1:8088/","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Missing OpenGraph Social Meta Tags (og:image, og:description)","description":"Missing Open Graph tags (og:image, og:description) will cause broken card previews when shared on Slack, Twitter/X, or LinkedIn.","element_selector":null,"evidence":{"missing_tags":["og:image","og:description"]},"remediation":"Add missing OpenGraph meta tags in <head>: og:image, og:description."},{"id":"ISSUE-01D7BC5F","url":"http://127.0.0.1:8088/pricing","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Missing OpenGraph Social Meta Tags (og:title, og:image, og:description)","description":"Missing Open Graph tags (og:title, og:image, og:description) will cause broken card previews when shared on Slack, Twitter/X, or LinkedIn.","element_selector":null,"evidence":{"missing_tags":["og:title","og:image","og:description"]},"remediation":"Add missing OpenGraph meta tags in <head>: og:title, og:image, og:description."},{"id":"ISSUE-1F588964","url":"http://127.0.0.1:8088/about","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Lengthy Meta Description (282 chars)","description":"Meta description length is 282 characters and will likely be truncated on SERP viewports.","element_selector":null,"evidence":{"content":"This is an excessively long meta description crafted specifically to test SEO truncation warnings. It keeps going on and on beyond one hundred and sixty characters to ensure that the AI Website QA Agent properly flags it as a suspected truncation risk in search engine result pages.","length":282},"remediation":"Shorten meta description to under 160 characters."},{"id":"ISSUE-30C6827B","url":"http://127.0.0.1:8088/about","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Missing OpenGraph Social Meta Tags (og:title, og:image, og:description)","description":"Missing Open Graph tags (og:title, og:image, og:description) will cause broken card previews when shared on Slack, Twitter/X, or LinkedIn.","element_selector":null,"evidence":{"missing_tags":["og:title","og:image","og:description"]},"remediation":"Add missing OpenGraph meta tags in <head>: og:title, og:image, og:description."},{"id":"ISSUE-EE37457B","url":"http://127.0.0.1:8088/contact","category":"SEO_METADATA","severity":"P3_LOW","status":"SUSPECTED","title":"Missing OpenGraph Social Meta Tags (og:title, og:image, og:description)","description":"Missing Open Graph tags (og:title, og:image, og:description) will cause broken card previews when shared on Slack, Twitter/X, or LinkedIn.","element_selector":null,"evidence":{"missing_tags":["og:title","og:image","og:description"]},"remediation":"Add missing OpenGraph meta tags in <head>: og:title, og:image, og:description."},{"id":"ISSUE-931185BC","url":"http://127.0.0.1:8088/pricing","category":"UI_LAYOUT","severity":"P3_LOW","status":"SUSPECTED","title":"Skipped Heading Hierarchy Level (h1 to h4)","description":"Heading order skipped a level from <h1> directly to <h4> ('Developer Tier ($0/mo)').","element_selector":"<h4>Developer Tier ($0/mo)</h4>","evidence":{"from_level":1,"to_level":4},"remediation":"Maintain a sequential heading hierarchy without skipping intermediate levels."},{"id":"ISSUE-73401290","url":"http://127.0.0.1:8088/about","category":"UI_LAYOUT","severity":"P3_LOW","status":"SUSPECTED","title":"Skipped Heading Hierarchy Level (h1 to h3)","description":"Heading order skipped a level from <h1> directly to <h3> ('Leadership Team').","element_selector":"<h3>Leadership Team</h3>","evidence":{"from_level":1,"to_level":3},"remediation":"Maintain a sequential heading hierarchy without skipping intermediate levels."}]};
+    let currentStatus = 'ALL';
+    let currentSeverity = 'ALL';
+    let searchQuery = '';
+
+    function renderIssues() {
+      const container = document.getElementById('issue-list');
+      container.innerHTML = '';
+
+      const filtered = reportData.issues.filter(issue => {
+        if (currentStatus !== 'ALL' && issue.status !== currentStatus) return false;
+        if (currentSeverity !== 'ALL' && issue.severity !== currentSeverity) return false;
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          const matchTitle = issue.title.toLowerCase().includes(q);
+          const matchDesc = issue.description.toLowerCase().includes(q);
+          const matchUrl = issue.url.toLowerCase().includes(q);
+          if (!matchTitle && !matchDesc && !matchUrl) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="no-results">🎉 No issues match your filter criteria!</div>';
+        return;
+      }
+
+      filtered.forEach(issue => {
+        const card = document.createElement('div');
+        card.className = 'issue-card';
+        card.innerHTML = `
+          <div class="issue-header">
+            <div class="issue-title">${issue.title}</div>
+            <div class="badges">
+              <span class="badge badge-${issue.status}">${issue.status === 'CONFIRMED' ? 'Confirmed Defect' : 'Suspected Anomaly'}</span>
+              <span class="badge badge-${issue.severity}">${issue.severity.replace('_', ' ')}</span>
+              <span class="badge badge-cat">${issue.category.replace('_', ' ')}</span>
+            </div>
+          </div>
+          <div class="issue-desc">${issue.description}</div>
+          ${issue.element_selector ? `<div class="code-box">Element Context: ${escapeHtml(issue.element_selector)}</div>` : ''}
+          <div class="remediation-box">💡 <strong>Remediation:</strong> ${issue.remediation}</div>
+          <div class="issue-meta">Found on: <code>${issue.url}</code> | ID: ${issue.id}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function setFilter(type, val, btn) {
+      if (type === 'status') {
+        currentStatus = (currentStatus === val && val !== 'ALL') ? 'ALL' : val;
+        // update button state
+        document.querySelectorAll('.filter-group:nth-child(1) .btn-filter').forEach(b => {
+          b.classList.remove('active', 'confirmed-active', 'suspected-active');
+        });
+        if (currentStatus === 'CONFIRMED') btn.classList.add('confirmed-active');
+        else if (currentStatus === 'SUSPECTED') btn.classList.add('suspected-active');
+        else btn.classList.add('active');
+      } else if (type === 'severity') {
+        currentSeverity = (currentSeverity === val && val !== 'ALL') ? 'ALL' : val;
+        document.querySelectorAll('.filter-group:nth-child(2) .btn-filter').forEach(b => b.classList.remove('active'));
+        if (currentSeverity !== 'ALL') btn.classList.add('active');
+      }
+      renderIssues();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val.trim();
+      renderIssues();
+    }
+
+    // Initial render
+    renderIssues();
+  </script>
+</body>
+</html>
