@@ -1,3 +1,7 @@
+qa_report.html
+qa-report.html
+qa_report.json
+qa_report.md
 __pycache__/
 *.py[cod]
 *$py.class

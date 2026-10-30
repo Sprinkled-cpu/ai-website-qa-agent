@@ -149,7 +149,11 @@ class MockStagingAdapter(BaseAdapter):
     )
 
     def send(self, request, **kwargs):
-        path = request.path_url
+        path = request.path_url.split("?")[0]
+        if path != "/" and path.endswith("/"):
+            path = path.rstrip("/")
+        if not path:
+            path = "/"
         resp = Response()
         resp.request = request
         resp.url = request.url
